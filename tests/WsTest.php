@@ -4,10 +4,10 @@
 use Co\Net;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Psc\Core\Coroutine\Promise;
-use Psc\Core\WebSocket\Options;
-use Psc\Core\WebSocket\Server\Connection;
-use Psc\Utils\Output;
+use Ripple\Coroutine\Promise;
+use Ripple\App\WebSocket\Options;
+use Ripple\App\WebSocket\Server\Connection;
+use Ripple\Utils\Output;
 
 use function Co\cancelAll;
 use function Co\defer;

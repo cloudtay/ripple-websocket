@@ -10,7 +10,7 @@
   ],
   "autoload": {
     "psr-4": {
-      "Psc\\Core\\WebSocket\\": "src/"
+      "Ripple\\App\\WebSocket\\": "src/"
     }
   },
   "require": {

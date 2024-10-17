@@ -32,12 +32,12 @@
  * 由于软件或软件的使用或其他交易而引起的任何索赔、损害或其他责任承担责任。
  */
 
-namespace Psc\Core\WebSocket;
+namespace Ripple\App\WebSocket;
 
-use Psc\Core\LibraryAbstract;
-use Psc\Core\WebSocket\Client\Connection;
-use Psc\Core\WebSocket\Server\Server;
-use Psc\Utils\Output;
+use Ripple\LibraryAbstract;
+use Ripple\App\WebSocket\Client\Connection;
+use Ripple\App\WebSocket\Server\Server;
+use Ripple\Utils\Output;
 use Throwable;
 
 /**

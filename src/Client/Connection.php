@@ -32,15 +32,15 @@
  * 由于软件或软件的使用或其他交易而引起的任何索赔、损害或其他责任承担责任。
  */
 
-namespace Psc\Core\WebSocket\Client;
+namespace Ripple\App\WebSocket\Client;
 
 use Closure;
 use Co\IO;
 use Exception;
-use Psc\Core\Socket\SocketStream;
-use Psc\Core\Stream\Exception\ConnectionException;
-use Psc\Core\Stream\Stream;
-use Psc\Utils\Output;
+use Ripple\Socket\SocketStream;
+use Ripple\Stream\Exception\ConnectionException;
+use Ripple\Stream\Stream;
+use Ripple\Utils\Output;
 use Throwable;
 
 use function base64_encode;

@@ -32,13 +32,13 @@
  * 由于软件或软件的使用或其他交易而引起的任何索赔、损害或其他责任承担责任。
  */
 
-namespace Psc\Core\WebSocket\Server;
+namespace Ripple\App\WebSocket\Server;
 
 use Closure;
-use Psc\Core\Socket\SocketStream;
-use Psc\Core\Stream\Exception\ConnectionException;
-use Psc\Core\WebSocket\Frame\Type;
-use Psc\Utils\Output;
+use Ripple\Socket\SocketStream;
+use Ripple\Stream\Exception\ConnectionException;
+use Ripple\App\WebSocket\Frame\Type;
+use Ripple\Utils\Output;
 use Symfony\Component\HttpFoundation\Request;
 use Throwable;
 
