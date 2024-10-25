@@ -123,7 +123,9 @@ class Server
     {
         $this->server->onReadable(function (SocketStream $stream) {
             try {
-                $client = $stream->accept();
+                if (!$client = $stream->accept()) {
+                    return;
+                }
 
                 $client->setBlocking(false);
 
