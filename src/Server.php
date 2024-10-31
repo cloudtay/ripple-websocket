@@ -32,14 +32,14 @@
  * 由于软件或软件的使用或其他交易而引起的任何索赔、损害或其他责任承担责任。
  */
 
-namespace Ripple\App\WebSocket\Server;
+namespace Ripple\WebSocket;
 
 use Closure;
 use Co\IO;
+use Ripple\Kernel;
 use Ripple\Socket\SocketStream;
 use Ripple\Stream\Exception\RuntimeException;
-use Ripple\App\WebSocket\Options;
-use Ripple\Kernel;
+use Ripple\WebSocket\Server\Connection;
 use Symfony\Component\HttpFoundation\Request;
 use Throwable;
 

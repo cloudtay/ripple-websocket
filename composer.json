@@ -1,6 +1,5 @@
 {
   "name": "cloudtay/ripple-websocket",
-  "version": "v0.2",
   "license": "MIT",
   "authors": [
     {
@@ -10,10 +9,14 @@
   ],
   "autoload": {
     "psr-4": {
-      "Ripple\\App\\WebSocket\\": "src/"
+      "Ripple\\WebSocket\\": "src/"
     }
   },
   "require": {
+    "cloudtay/ripple": "^1.0",
+    "cloudtay/ripple-http": "^1.0",
+    "symfony/http-foundation": "*",
+    "ext-sockets": "*"
   },
   "require-dev": {
     "ext-posix": "*",
@@ -21,7 +24,6 @@
     "ext-curl": "*",
     "ext-parallel": "*",
     "ext-zlib": "*",
-    "cloudtay/ripple": "dev-main",
     "phpunit/phpunit": "*",
     "friendsofphp/php-cs-fixer": "*"
   },

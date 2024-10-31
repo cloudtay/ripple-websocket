@@ -1,13 +1,13 @@
 <?php declare(strict_types=1);
 
-
-use Co\Net;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Ripple\Coroutine\Promise;
-use Ripple\App\WebSocket\Options;
-use Ripple\App\WebSocket\Server\Connection;
+use Ripple\Promise;
 use Ripple\Utils\Output;
+use Ripple\WebSocket\Client;
+use Ripple\WebSocket\Options;
+use Ripple\WebSocket\Server;
+use Ripple\WebSocket\Server\Connection;
 
 use function Co\cancelAll;
 use function Co\defer;
@@ -63,7 +63,7 @@ class WsTest extends TestCase
             ],
         ]);
 
-        $server = Net::WebSocket()->server(
+        $server = new Server(
             'ws://127.0.0.1:8001/',
             $context,
             new Options(true, true)
@@ -84,7 +84,7 @@ class WsTest extends TestCase
     {
         return \Co\promise(function ($r) {
             $hash   = \md5(\uniqid());
-            $client = Net::WebSocket()->connect('ws://127.0.0.1:8001/');
+            $client = new Client('ws://127.0.0.1:8001/');
             $client->onOpen(static function () use ($client, $hash) {
                 \Co\sleep(0.1);
                 $client->send($hash);
