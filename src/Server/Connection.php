@@ -32,13 +32,14 @@
  * 由于软件或软件的使用或其他交易而引起的任何索赔、损害或其他责任承担责任。
  */
 
-namespace Ripple\App\WebSocket\Server;
+namespace Ripple\WebSocket\Server;
 
 use Closure;
 use Ripple\Socket\SocketStream;
 use Ripple\Stream\Exception\ConnectionException;
-use Ripple\App\WebSocket\Frame\Type;
 use Ripple\Utils\Output;
+use Ripple\WebSocket\Frame\Type;
+use Ripple\WebSocket\Server;
 use Symfony\Component\HttpFoundation\Request;
 use Throwable;
 
@@ -53,7 +54,6 @@ use function deflate_init;
 use function explode;
 use function inflate_add;
 use function inflate_init;
-use function is_resource;
 use function ord;
 use function pack;
 use function parse_url;

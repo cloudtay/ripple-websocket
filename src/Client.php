@@ -32,14 +32,14 @@
  * 由于软件或软件的使用或其他交易而引起的任何索赔、损害或其他责任承担责任。
  */
 
-namespace Ripple\App\WebSocket\Client;
+namespace Ripple\WebSocket;
 
 use Closure;
 use Co\IO;
 use Exception;
 use Ripple\Socket\SocketStream;
+use Ripple\Stream;
 use Ripple\Stream\Exception\ConnectionException;
-use Ripple\Stream\Stream;
 use Ripple\Utils\Output;
 use Throwable;
 
@@ -69,7 +69,7 @@ use function unpack;
  * White paper: https://datatracker.ietf.org/doc/html/rfc6455
  * Latest specification: https://websockets.spec.whatwg.org/
  */
-class Connection
+class Client
 {
     /**
      * @var Closure
