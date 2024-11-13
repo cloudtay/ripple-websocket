@@ -35,9 +35,8 @@
 namespace Ripple\WebSocket;
 
 use Closure;
-use Co\IO;
 use Exception;
-use Ripple\Socket\SocketStream;
+use Ripple\Socket;
 use Ripple\Stream;
 use Ripple\Stream\Exception\ConnectionException;
 use Ripple\Utils\Output;
@@ -92,9 +91,9 @@ class Client
     private Closure $onError;
 
     /**
-     * @var SocketStream
+     * @var Socket
      */
-    private SocketStream $stream;
+    private Socket $stream;
 
     /**
      * @var string
@@ -161,8 +160,8 @@ class Client
             $path         = $parsedUrl['path'] ?? '';
             $path         = $path !== '' ? $path : '/';
             $this->stream = match ($scheme) {
-                'ws'    => IO::Socket()->connect("tcp://{$host}:{$port}", $this->timeout, $this->context),
-                'wss'   => IO::Socket()->connectWithSSL("ssl://{$host}:{$port}", $this->timeout, $this->context),
+                'ws'    => Socket::connect("tcp://{$host}:{$port}", $this->timeout, $this->context),
+                'wss'   => Socket::connectWithSSL("ssl://{$host}:{$port}", $this->timeout, $this->context),
                 default => throw new Exception('Unsupported scheme'),
             };
 

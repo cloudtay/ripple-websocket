@@ -35,7 +35,7 @@
 namespace Ripple\WebSocket\Server;
 
 use Closure;
-use Ripple\Socket\SocketStream;
+use Ripple\Socket;
 use Ripple\Stream\Exception\ConnectionException;
 use Ripple\Utils\Output;
 use Ripple\WebSocket\Frame\Type;
@@ -119,12 +119,12 @@ class Connection
     private Closure|null $onRequest = null;
 
     /**
-     * @param SocketStream $stream
+     * @param Socket $stream
      * @param Server       $server
      */
-    public function __construct(public readonly SocketStream $stream, private readonly Server $server)
+    public function __construct(public readonly Socket $stream, private readonly Server $server)
     {
-        $this->stream->onReadable(fn (SocketStream $stream) => $this->handleRead($stream));
+        $this->stream->onReadable(fn (Socket $stream) => $this->handleRead($stream));
         $this->stream->onClose(fn () => $this->_onClose());
     }
 
@@ -132,11 +132,11 @@ class Connection
      * @Author cclilshy
      * @Date   2024/8/15 14:44
      *
-     * @param SocketStream $stream
+     * @param Socket $stream
      *
      * @return void
      */
-    private function handleRead(SocketStream $stream): void
+    private function handleRead(Socket $stream): void
     {
         try {
             $data = $stream->readContinuously(1024);

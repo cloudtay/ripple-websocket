@@ -35,9 +35,8 @@
 namespace Ripple\WebSocket;
 
 use Closure;
-use Co\IO;
 use Ripple\Kernel;
-use Ripple\Socket\SocketStream;
+use Ripple\Socket;
 use Ripple\Stream\Exception\RuntimeException;
 use Ripple\WebSocket\Server\Connection;
 use Symfony\Component\HttpFoundation\Request;
@@ -71,8 +70,8 @@ class Server
     /*** @var Closure */
     private Closure $onRequest;
 
-    /*** @var SocketStream */
-    private SocketStream $server;
+    /*** @var Socket */
+    private Socket $server;
 
     /*** @var Options */
     private Options $options;
@@ -104,7 +103,7 @@ class Server
             throw new RuntimeException('The address must contain a port');
         }
 
-        $this->server = IO::Socket()->server("tcp://{$host}:{$port}", $context);
+        $this->server = Socket::server("tcp://{$host}:{$port}", $context);
 
         $this->server->setOption(SOL_SOCKET, SO_KEEPALIVE, 1);
         $this->server->setOption(SOL_SOCKET, SO_REUSEADDR, 1);
@@ -121,7 +120,7 @@ class Server
      */
     public function listen(): void
     {
-        $this->server->onReadable(function (SocketStream $stream) {
+        $this->server->onReadable(function (Socket $stream) {
             try {
                 if (!$client = $stream->accept()) {
                     return;
