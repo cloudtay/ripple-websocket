@@ -9,7 +9,8 @@
   ],
   "autoload": {
     "psr-4": {
-      "Ripple\\WebSocket\\": "src/"
+      "Ripple\\WebSocket\\": "src/",
+      "Tests\\": "tests/"
     }
   },
   "require": {

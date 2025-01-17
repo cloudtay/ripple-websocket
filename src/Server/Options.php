@@ -32,7 +32,7 @@
  * 由于软件或软件的使用或其他交易而引起的任何索赔、损害或其他责任承担责任。
  */
 
-namespace Ripple\WebSocket;
+namespace Ripple\WebSocket\Server;
 
 use function extension_loaded;
 
@@ -43,9 +43,9 @@ use function extension_loaded;
 class Options
 {
     /*** @var bool */
-    private readonly bool $deflate;
+    protected readonly bool $deflate;
 
-    public function __construct(private readonly bool $pingPong = true, bool $deflate = false)
+    public function __construct(protected readonly bool $pingPong = true, bool $deflate = false)
     {
         $this->deflate = $deflate && extension_loaded('zlib');
     }
