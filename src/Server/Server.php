@@ -152,6 +152,16 @@ class Server
 
     /**
      * @param string $name
+     *
+     * @return mixed
+     */
+    public function __get(string $name): mixed
+    {
+        return $this->{$name};
+    }
+
+    /**
+     * @param string $name
      * @param mixed  $value
      *
      * @return void
@@ -169,15 +179,5 @@ class Server
         }
 
         $this->{$name} = $value;
-    }
-
-    /**
-     * @param string $name
-     *
-     * @return mixed
-     */
-    public function __get(string $name): mixed
-    {
-        return $this->{$name};
     }
 }

@@ -119,8 +119,7 @@ class Client
         Request|string               $request,
         protected readonly int|float $timeout = 10,
         protected readonly mixed     $context = null
-    )
-    {
+    ) {
         if ($request instanceof Request) {
             $this->request = $request;
         } else {
@@ -191,7 +190,12 @@ class Client
 
             $this->stream->onReadable(function () {
                 try {
-                    $this->buffer .= $this->stream->readContinuously(8192);
+                    $buffer = $this->stream->readContinuously(8192);
+                    if (!$buffer) {
+                        $this->stream->close();
+                        return;
+                    }
+                    $this->buffer .= $buffer;
                     $this->tick();
                 } catch (Throwable $e) {
                     $this->stream->close();
@@ -303,6 +307,65 @@ class Client
 
     /**
      * @Author cclilshy
+     * @Date   2024/8/15 14:47
+     * @return void
+     */
+    public function close(): void
+    {
+        if (isset($this->stream)) {
+            try {
+                $this->sendFrame('', 0x8);
+            } catch (Throwable $e) {
+
+            } finally {
+                $this->stream->close();
+            }
+        }
+    }
+
+    /**
+     * @param string $data
+     * @param int    $opcode
+     *
+     * @return void
+     * @throws \Ripple\Stream\Exception\ConnectionException
+     */
+    public function sendFrame(string $data, int $opcode = 0x1): void
+    {
+        $finOpcode = 0x80 | $opcode;
+        $packet    = chr($finOpcode);
+        $length    = strlen($data);
+
+        if ($length <= 125) {
+            $packet .= chr($length);
+        } elseif ($length < 65536) {
+            $packet .= chr(126);
+            $packet .= pack('n', $length);
+        } else {
+            $packet .= chr(127);
+            $packet .= pack('J', $length);
+        }
+
+        $packet .= $data;
+        $this->stream->write($packet);
+    }
+
+    /**
+     * @return void
+     */
+    protected function onStreamClose(): void
+    {
+        if (isset($this->onClose)) {
+            try {
+                call_user_func($this->onClose, $this);
+            } catch (Throwable $e) {
+                Output::error($e->getMessage());
+            }
+        }
+    }
+
+    /**
+     * @Author cclilshy
      * @Date   2024/8/15 14:48
      * @return void
      * @throws ConnectionException
@@ -388,25 +451,6 @@ class Client
     /**
      * @Author cclilshy
      * @Date   2024/8/15 14:47
-     * @return void
-     */
-    public function close(): void
-    {
-        if (isset($this->stream)) {
-            try {
-                $this->sendFrame('', 0x8);
-                \Co\sleep(0.1);
-            } catch (Throwable $e) {
-
-            } finally {
-                $this->stream->close();
-            }
-        }
-    }
-
-    /**
-     * @Author cclilshy
-     * @Date   2024/8/15 14:47
      *
      * @param string $data
      *
@@ -438,47 +482,6 @@ class Client
         }
         $packet .= $maskedData;
         $this->stream->write($packet);
-    }
-
-    /**
-     * @param string $data
-     * @param int    $opcode
-     *
-     * @return void
-     * @throws \Ripple\Stream\Exception\ConnectionException
-     */
-    public function sendFrame(string $data, int $opcode = 0x1): void
-    {
-        $finOpcode = 0x80 | $opcode;
-        $packet    = chr($finOpcode);
-        $length    = strlen($data);
-
-        if ($length <= 125) {
-            $packet .= chr($length);
-        } elseif ($length < 65536) {
-            $packet .= chr(126);
-            $packet .= pack('n', $length);
-        } else {
-            $packet .= chr(127);
-            $packet .= pack('J', $length);
-        }
-
-        $packet .= $data;
-        $this->stream->write($packet);
-    }
-
-    /**
-     * @return void
-     */
-    protected function onStreamClose(): void
-    {
-        if (isset($this->onClose)) {
-            try {
-                call_user_func($this->onClose, $this);
-            } catch (Throwable $e) {
-                Output::error($e->getMessage());
-            }
-        }
     }
 
     /**

@@ -15,14 +15,6 @@ class ServerTest extends TestCase
     /**
      * @return void
      */
-    protected function setUp(): void
-    {
-        $this->server = new Server('ws://127.0.0.1:8080');
-    }
-
-    /**
-     * @return void
-     */
     public function testServerCreation()
     {
         $this->assertInstanceOf(Server::class, $this->server);
@@ -67,5 +59,13 @@ class ServerTest extends TestCase
 
         $this->server->listen();
         $this->assertIsCallable($this->server->onRequest);
+    }
+
+    /**
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        $this->server = new Server('ws://127.0.0.1:8080');
     }
 }

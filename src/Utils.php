@@ -73,6 +73,18 @@ class Utils
     }
 
     /**
+     * @param string $name
+     * @param string $request
+     * @param string $give
+     *
+     * @return string
+     */
+    protected static function generateMessage(string $name, string $request, string $give = 'null'): string
+    {
+        return "The parameter {$name} must be {$request}, {$give} given";
+    }
+
+    /**
      * @param string $queryString
      *
      * @return array
@@ -88,17 +100,5 @@ class Utils
             }
         }
         return $query;
-    }
-
-    /**
-     * @param string $name
-     * @param string $request
-     * @param string $give
-     *
-     * @return string
-     */
-    protected static function generateMessage(string $name, string $request, string $give = 'null'): string
-    {
-        return "The parameter {$name} must be {$request}, {$give} given";
     }
 }

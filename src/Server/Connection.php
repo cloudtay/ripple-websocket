@@ -95,40 +95,29 @@ class Connection
     );
 
     protected const EXTEND_HEAD = 'Sec-WebSocket-Extensions';
-
+    /*** @var mixed */
+    public mixed $context;
     /*** @var bool */
     protected bool $isDeflate = false;
-
     /*** @var string */
     protected string $buffer = '';
-
     /**
      * @Description Loaded using Request
      * @var string
      */
     protected string $headerContent = '';
-
     /*** @var Request */
     protected Request $request;
-
     /*** @var int */
     protected int $step = 0;
-
     /*** @var Closure */
     protected Closure $onMessage;
-
     /*** @var Closure */
     protected Closure $onConnect;
-
     /*** @var Closure */
     protected Closure $onClose;
-
     /*** @var Closure */
     protected Closure $onRequest;
-
-    /*** @var mixed */
-    public mixed $context;
-
     /*** @var DeflateContext|false */
     protected DeflateContext|false $deflator = false;
 
@@ -198,18 +187,10 @@ class Connection
                     call_user_func($this->onConnect, $this);
                 }
 
-                foreach ($this->parse() as $message) {
-                    if (isset($this->onMessage)) {
-                        call_user_func($this->onMessage, $message, $this);
-                    }
-                }
+                $this->consumptionBuffers();
             }
         } else {
-            foreach ($this->parse() as $message) {
-                if (isset($this->onMessage)) {
-                    call_user_func($this->onMessage, $message, $this);
-                }
-            }
+            $this->consumptionBuffers();
         }
     }
 
@@ -244,21 +225,21 @@ class Connection
     protected function tick(): Request|false|null
     {
         if ($index = strpos($this->buffer, "\r\n\r\n")) {
-            $verify = Connection::NEED_HEAD;
+            $verify         = Connection::NEED_HEAD;
             $headerWithBody = explode("\r\n\r\n", $this->buffer, 2);
-            $headerContent = $headerWithBody[0];
-            $bodyContent = $headerWithBody[1] ?? '';
+            $headerContent  = $headerWithBody[0];
+            $bodyContent    = $headerWithBody[1] ?? '';
 
-            $lines = explode("\r\n", $headerContent);
+            $lines  = explode("\r\n", $headerContent);
             $header = array();
 
             if (count($firstLineInfo = explode(" ", array_shift($lines))) !== 3) {
                 return false;
             }
 
-            $method          = $firstLineInfo[0];
-            $url             = $firstLineInfo[1];
-            $version         = $firstLineInfo[2];
+            $method  = $firstLineInfo[0];
+            $url     = $firstLineInfo[1];
+            $version = $firstLineInfo[2];
 
             foreach ($lines as $line) {
                 if ($_ = explode(":", $line)) {
@@ -397,6 +378,39 @@ class Connection
     }
 
     /**
+     * @return void
+     * @throws \Ripple\Stream\Exception\ConnectionException
+     */
+    protected function consumptionBuffers(): void
+    {
+        foreach ($this->parse() as $message) {
+            [$message, $opcode] = $message;
+            switch ($opcode) {
+                case 0x1: // text
+                    break;
+                case 0x2: // binary
+                    break;
+                case 0x8: // close
+                    $this->stream->close();
+                    return;
+                case 0x9: // ping
+                    // Send pong response
+                    $pongFrame = chr(0x8A) . chr(0x00);
+                    $this->stream->write($pongFrame);
+                    return;
+                case 0xA: // pong
+                    return;
+                default:
+                    break;
+            }
+
+            if (isset($this->onMessage)) {
+                call_user_func($this->onMessage, $message, $this);
+            }
+        }
+    }
+
+    /**
      * @Author cclilshy
      * @Date   2024/8/15 14:45
      * @return array
@@ -483,7 +497,7 @@ class Connection
 
             $prevPayload .= $payload;
             if ($fin) {
-                $results[]   = $prevPayload;
+                $results[]   = [$prevPayload, $opcode];
                 $prevPayload = '';
             }
         }
@@ -626,7 +640,6 @@ class Connection
     {
         if (!$this->stream->isClosed()) {
             $this->sendFrame('', Type::CLOSE);
-            \Co\sleep(0.1);
             $this->stream->close();
         }
     }
@@ -656,6 +669,16 @@ class Connection
         }
 
         return inflate_add($this->inflator, $payload);
+    }
+
+    /**
+     * @return void
+     */
+    protected function onStreamClose(): void
+    {
+        if (isset($this->onClose)) {
+            call_user_func($this->onClose, $this);
+        }
     }
 
     /**
@@ -739,15 +762,5 @@ class Connection
         }
 
         $this->{$name} = $value;
-    }
-
-    /**
-     * @return void
-     */
-    protected function onStreamClose(): void
-    {
-        if (isset($this->onClose)) {
-            call_user_func($this->onClose, $this);
-        }
     }
 }
