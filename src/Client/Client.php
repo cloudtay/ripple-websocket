@@ -39,6 +39,8 @@ use Exception;
 use Ripple\Socket;
 use Ripple\Stream;
 use Ripple\Stream\Exception\ConnectionException;
+use Ripple\Tunnel\Http;
+use Ripple\Tunnel\Socks5;
 use Ripple\Utils\Output;
 use Ripple\WebSocket\Utils;
 use RuntimeException;
@@ -48,7 +50,7 @@ use Throwable;
 use function base64_encode;
 use function call_user_func;
 use function chr;
-use function Co\async;
+use function Co\go;
 use function Co\promise;
 use function explode;
 use function http_build_query;
@@ -66,6 +68,9 @@ use function substr;
 use function trim;
 use function ucwords;
 use function unpack;
+use function getenv;
+use function in_array;
+use function is_array;
 
 use const PHP_URL_HOST;
 use const PHP_URL_PATH;
@@ -113,12 +118,12 @@ class Client
     /**
      * @param \Symfony\Component\HttpFoundation\Request|string $request
      * @param int|float                                        $timeout
-     * @param mixed|null                                       $context
+     * @param array $options
      */
     public function __construct(
         Request|string               $request,
         protected readonly int|float $timeout = 10,
-        protected readonly mixed     $context = null
+        protected readonly array $options = []
     ) {
         if ($request instanceof Request) {
             $this->request = $request;
@@ -134,20 +139,28 @@ class Client
                 default => throw new RuntimeException('Unsupported scheme'),
             };
 
+            $requestServer = [
+                'REQUEST_METHOD'  => 'GET',
+                'REQUEST_URI'     => parse_url($request, PHP_URL_PATH) ?? '/',
+                'HTTP_HOST'       => "{$host}:{$port}",
+                'HTTP_UPGRADE'    => 'websocket',
+                'HTTP_CONNECTION' => 'Upgrade',
+                'SERVER_PORT'     => parse_url($request, PHP_URL_PORT)
+            ];
+
+            if (isset($this->options['header'])  && is_array($this->options['header'])) {
+                foreach ($this->options['header'] as $key => $value) {
+                    $requestServer['HTTP_' . strtoupper(str_replace('-', '_', $key))] = $value;
+                }
+            }
+
             $this->request = new Request(
                 $query,
                 [],
                 [],
                 [],
                 [],
-                [
-                    'REQUEST_METHOD'  => 'GET',
-                    'REQUEST_URI'     => parse_url($request, PHP_URL_PATH) ?? '/',
-                    'HTTP_HOST'       => "{$host}:{$port}",
-                    'HTTP_UPGRADE'    => 'websocket',
-                    'HTTP_CONNECTION' => 'Upgrade',
-                    'SERVER_PORT'     => parse_url($request, PHP_URL_PORT)
-                ]
+                $requestServer
             );
         }
 
@@ -161,7 +174,7 @@ class Client
             throw new RuntimeException('Failed to generate random bytes');
         }
 
-        async(function () {
+        go(function () {
             try {
                 $this->handshake();
                 if (isset($this->onOpen)) {
@@ -226,17 +239,69 @@ class Client
             $host   = $this->request->getHost();
             $uri    = $this->request->getRequestUri();
             $port   = $this->request->getPort();
-
             $query        = http_build_query($this->request->query->all());
-            $this->stream = match ($scheme) {
-                'ws'    => Socket::connect("tcp://{$host}:{$port}", $this->timeout, $this->context),
-                'wss'   => Socket::connectWithSSL("ssl://{$host}:{$port}", $this->timeout, $this->context),
-                default => throw new Exception('Unsupported scheme'),
+            $ssl = $scheme === 'wss';
+
+            $proxy = match ($scheme) {
+                'ws'    => getenv('http_proxy'),
+                'wss'   => getenv('https_proxy'),
+                default => null,
             };
 
-            $this->stream->setBlocking(false);
+            if ($this->options['proxy'] ?? null) {
+                $proxy = $this->options['proxy'];
+            }
 
-            $context = "{$method} {$uri}{$query} HTTP/1.1\r\n";
+            if ($proxy && in_array($host, ['127.0.0.1', 'localhost', '::1'], true)) {
+                $proxy = null;
+            }
+
+            if ($proxy) {
+                $proxyParse = parse_url($proxy);
+                if (!isset($proxyParse['host'], $proxyParse['port'])) {
+                    throw new ConnectionException('Invalid proxy address', ConnectionException::CONNECTION_ERROR);
+                }
+
+                $payload = [
+                    'host' => $host,
+                    'port' => $port,
+                ];
+                if (isset($proxyParse['user'], $proxyParse['pass'])) {
+                    $payload['username'] = $proxyParse['user'];
+                    $payload['password'] = $proxyParse['pass'];
+                }
+
+                switch ($proxyParse['scheme']) {
+                    case 'socks':
+                    case 'socks5':
+                        $tunnelSocket = Socks5::connect("tcp://{$proxyParse['host']}:{$proxyParse['port']}", $payload)->getSocket();
+                        $ssl && $tunnelSocket->enableSSL();
+                        $this->stream = $tunnelSocket;
+                        break;
+                    case 'http':
+                        $tunnelSocket = Http::connect("tcp://{$proxyParse['host']}:{$proxyParse['port']}", $payload)->getSocket();
+                        $ssl && $tunnelSocket->enableSSL();
+                        $this->stream = $tunnelSocket;
+                        break;
+                    case 'https':
+                        $tunnel       = Socket::connectWithSSL("tcp://{$proxyParse['host']}:{$proxyParse['port']}", $this->timeout);
+                        $tunnelSocket = Http::connect($tunnel, $payload)->getSocket();
+                        $ssl && $tunnelSocket->enableSSL();
+                        $this->stream = $tunnelSocket;
+                        break;
+                    default:
+                        throw new ConnectionException('Unsupported proxy protocol', ConnectionException::CONNECTION_ERROR);
+                }
+            } else {
+                $this->stream = match ($scheme) {
+                    'ws'  => Socket::connect("tcp://{$host}:{$port}", $this->timeout),
+                    'wss' => Socket::connectWithSSL("ssl://{$host}:{$port}", $this->timeout),
+                    default => throw new Exception('Unsupported scheme'),
+                };
+            }
+
+            $this->stream->setBlocking(false);
+            $context = "{$method} {$uri}?{$query} HTTP/1.1\r\n";
             foreach ($this->request->headers->all() as $name => $values) {
                 $name = str_replace(' ', '-', ucwords(str_replace('-', ' ', $name)));
                 foreach ($values as $value) {

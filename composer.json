@@ -14,8 +14,8 @@
     }
   },
   "require": {
-    "cloudtay/ripple": "^1.0",
-    "cloudtay/ripple-http": "^1.0",
+    "cloudtay/ripple": "^1.0.5",
+    "cloudtay/ripple-http": "^1.0.3",
     "symfony/http-foundation": "*",
     "ext-sockets": "*"
   },
